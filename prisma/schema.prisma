@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model blacklisted_wallet {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  wallet_id  String   @unique @db.Uuid
+  reason     String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  wallet     wallet   @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model platform {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description String?  @db.VarChar(255)
+  image       String?  @db.VarChar(255)
+  name        String   @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  user_id     String   @db.Uuid
+  tenant_id   String   @db.VarChar(255)
+  user        user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model smart_contract {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @db.VarChar(255)
+  address     String        @unique @db.VarChar(255)
+  blockchain  String        @db.VarChar(255)
+  created_at  DateTime      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime      @default(now()) @db.Timestamp(6)
+  transaction transaction[]
+}
+
+model transaction {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  smart_contract_id String         @db.Uuid
+  wallet_id         String         @db.Uuid
+  amount            Int
+  timestamp         DateTime       @db.Timestamp(6)
+  created_at        DateTime       @default(now()) @db.Timestamp(6)
+  updated_at        DateTime       @default(now()) @db.Timestamp(6)
+  smart_contract    smart_contract @relation(fields: [smart_contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  wallet            wallet         @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String     @unique @db.VarChar(255)
+  firstName   String?    @db.VarChar(255)
+  lastName    String?    @db.VarChar(255)
+  roq_user_id String     @db.VarChar(255)
+  tenant_id   String     @db.VarChar(255)
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime   @default(now()) @db.Timestamp(6)
+  platform    platform[]
+}
+
+model wallet {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  address            String              @unique @db.VarChar(255)
+  risk_score         Int
+  created_at         DateTime            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime            @default(now()) @db.Timestamp(6)
+  blacklisted_wallet blacklisted_wallet?
+  transaction        transaction[]
+}
